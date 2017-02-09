@@ -1,0 +1,8 @@
+name: ParkourWrapper
+main: com.minenash.ParkourWrapper.ParkourWrapper
+version: 1.3
+commands:
+   parkour:
+      description: Do /parkour help for help. 
+      usage: /<command> 
+      aliases: [p]

@@ -1,0 +1,10 @@
+# Parkour Wrapper by Minenash
+# Version 1.3
+# Variables: 
+
+plugin-prefix: '&0[&cParkour&0]'
+start-block: GOLD_BLOCK
+end-block: DIAMOND_BLOCK
+restart-blocks:
+  - STAINED_GLASS
+ 
