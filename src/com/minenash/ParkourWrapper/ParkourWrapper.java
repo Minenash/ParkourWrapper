@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Location;
@@ -53,6 +54,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 		saveFC();
 	}
 
+	@SuppressWarnings("deprecation")
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (sender instanceof Player) {
 			Player player = (Player) sender;
@@ -68,9 +70,9 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 							return true;
 						}
 						player.teleport(new Location(getServer().getWorld(data.getString("spawnW")),
-								data.getInt("spawnX") + 0.0,
+								data.getInt("spawnX") + 0.5,
 								data.getInt("spawnY") + 0.0,
-								data.getInt("spawnZ") + 0.0,
+								data.getInt("spawnZ") + 0.5,
 								(float)data.getDouble("spawnYw"),
 								(float)data.getDouble("spawnP")));
 						player.sendMessage(prefix + ChatColor.YELLOW + "Welcome to Parkour!");
@@ -196,11 +198,16 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 									if(key.contains(args[3])){
 										score.set(key, null);
 									}
+									player.sendMessage(prefix + ChatColor.DARK_AQUA + args[3] + ChatColor.GREEN
+											+ "'s Leaderboard has been reset.");
+									reload();
 								}
 							}
 							for(String key : score.getKeys(true)){
 								score.set(key, null);
 							}
+							player.sendMessage(prefix + ChatColor.GREEN + "All LeaderBoards have been wiped clean");
+							reload();
 							return true;
 						}
 						if(args.length < 4){
@@ -210,7 +217,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 									return true;
 								}
 								for(String key : score.getKeys(false)){
-									if(key.contains(player.getName())){score.set(key, null);}
+									if(key.contains(player.getUniqueId().toString())){score.set(key, null);}
 								}
 								player.sendMessage(prefix + ChatColor.DARK_AQUA + player.getName() + ChatColor.GREEN
 													+ " has been cleared from all Leaderboards.");
@@ -222,7 +229,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 								return true;
 							}
 							for(String key : score.getKeys(false)){
-								if(key.contains(args[2])){score.set(key, null);}
+								if(key.contains(UUID.fromString(args[2]).toString())){score.set(key, null);}
 							}
 							player.sendMessage(prefix + ChatColor.DARK_AQUA + args[2] + ChatColor.GREEN
 												+ " has been cleared from all Leaderboards.");
@@ -237,7 +244,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 									player.sendMessage(ChatColor.RED + "You don't have the nessary permission.");
 									return true;
 								}
-								score.set(args[3] + "-" + player.getName(), null);
+								score.set(args[3] + "-" + player.getUniqueId(), null);
 								player.sendMessage(prefix + ChatColor.DARK_AQUA + player.getName() + ChatColor.GREEN 
 										+ " has been removed from " + ChatColor.RED + args[3] + ChatColor.GREEN + ".");
 								reload();
@@ -247,7 +254,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 								player.sendMessage(ChatColor.RED + "You don't have the nessary permission.");
 								return true;
 							}
-							score.set(args[3] + "-" + args[2], null);
+							score.set(args[3] + "-" + UUID.fromString(args[2]), null);
 							player.sendMessage(prefix + ChatColor.DARK_AQUA + args[2] + ChatColor.GREEN 
 									+ " has been removed from " + ChatColor.RED + args[3] + ChatColor.GREEN + ".");
 							reload();
@@ -260,9 +267,12 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 						for(String l : leaderboard){if(l.contains(name)){lb.add(l);}}
 						player.sendMessage(ChatColor.GOLD+"Leaderboard for "+ChatColor.RED + name + ChatColor.GOLD+":");
 						for(int i = 0; i < 10 && i < lb.size() ; i++){
+							String player_name = lb.get(i).substring(lb.get(i).indexOf("$")+1);
 							player.sendMessage(ChatColor.GREEN + "" + (i+1) + ": " + ChatColor.DARK_AQUA +
-												lb.get(i).substring(lb.get(i).indexOf("-")+1) + ChatColor.GREEN + " - " 
-												+ ChatColor.YELLOW + score.getString(lb.get(i)) + ChatColor.GREEN + " secs");
+												player_name + ChatColor.GREEN + " - " + ChatColor.YELLOW + 
+												score.getDouble(args[1] + "$" + 
+												getServer().getOfflinePlayer(player_name).getUniqueId().toString()) + 
+												ChatColor.GREEN + " secs");
 						}
 						return true;
 					}
@@ -270,11 +280,11 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 						// To be written
 					} else if (args[2].equalsIgnoreCase("me")) {
 						player.sendMessage(prefix + ChatColor.GREEN + "Your score for " + ChatColor.RED + args[1]
-										+ ChatColor.GREEN + " is " + ChatColor.YELLOW + score.getString(args[1] + "-"
-										+ player.getName()) + ChatColor.GREEN + " secs.");
+										+ ChatColor.GREEN + " is " + ChatColor.YELLOW + score.getDouble(args[1] + "$"
+										+ player.getUniqueId()) + ChatColor.GREEN + " secs.");
 					} else if (args[2] != null) {
 						player.sendMessage(prefix + ChatColor.GREEN + args[2] + "'s score for " + ChatColor.RED + args[1]
-								+ ChatColor.GREEN + " is " + ChatColor.YELLOW + score.getString(args[1] + "-" +args[2]) 
+								+ ChatColor.GREEN + " is " + ChatColor.YELLOW + score.getString(args[1] + "$" +args[2]) 
 								+ ChatColor.GREEN + " secs.");
 					}
 					return true;
@@ -440,18 +450,17 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 		ArrayList<String> blank = new ArrayList<String>();
 		parkourList = blank;
 		for( String key : data.getKeys(false)){
-			if(!(key.contains("spawn") && data.getString(key + ".world") == null))
+			if(!key.contains("spawn"))
 				parkourList.add(key);
 		}
 	}
-	@SuppressWarnings("deprecation")
 	public void makeLeaderboard(){
 		ArrayList<String> blank = new ArrayList<String>();
 		for(String key : score.getKeys(false)){
-			String name = getServer().getOfflinePlayer(key.substring(key.indexOf(".") + 1)).getName();
-			blank.add(key.substring(0, key.indexOf("-")) + name);
-			
+			String name = getServer().getOfflinePlayer(UUID.fromString(key.substring(key.indexOf("$") + 1))).getName();
+			blank.add(key.substring(0, key.indexOf("$")) + "$" + name);
 		}
+		leaderboard = blank;
 		for(int i = 0; i < blank.size() - 1; i++){
 			if(score.getDouble(blank.get(i)) > score.getDouble(blank.get(i+1))){
 				String temp = blank.get(i+1);
@@ -547,7 +556,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 				if(save == true){
 					String oldTime = score.getString(pp.name + "-" + pp.player_name);
 					if(oldTime == null || Double.parseDouble(oldTime) > time){
-						score.set(pp.name + "-" + pp.UUID, time);
+						score.set(pp.name + "$" + pp.UUID, time);
 					}
 					player.teleport(new Location(player.getWorld(), 
 							Integer.parseInt(data.getString(pp.name + ".start-cords.x")) -0.5,
@@ -560,6 +569,7 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 				}
 				pps.remove(pp);
 				makeLeaderboard();
+				reload();
 				break;
 			}
 		}
