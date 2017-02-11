@@ -198,10 +198,11 @@ public class ParkourWrapper extends JavaPlugin implements Listener {
 									if(key.contains(args[3])){
 										score.set(key, null);
 									}
-									player.sendMessage(prefix + ChatColor.DARK_AQUA + args[3] + ChatColor.GREEN
-											+ "'s Leaderboard has been reset.");
-									reload();
 								}
+								player.sendMessage(prefix + ChatColor.RED + args[3] + ChatColor.GREEN
+										+ "'s Leaderboard has been reset.");
+								reload();
+								return true;
 							}
 							for(String key : score.getKeys(true)){
 								score.set(key, null);
